@@ -45,7 +45,7 @@ while True:
 
     #判断买点
     buy_points = history_test.history_bolling_find_buy(bollinger_band_15m, kdj_15m, kdj_1m)
-    #sell_points = history_test.history_bolling_find_sell(bollinger_band_15m, kdj_15m, kdj_1m)
+    sell_points = history_test.history_bolling_find_sell(bollinger_band_15m, kdj_15m, kdj_1m)
 
     # 获取账户信息
     balance_result = account.get_balance(ccy='USDT')
@@ -67,7 +67,18 @@ while True:
         s=120,                # 点大小
         color='red',          # 填充色
         edgecolor='gold',     # 边缘色
-        marker='*',           # 星形标记
+        marker='x',           # 星形标记
+        alpha=0.9,            # 透明度
+        zorder=10,            # 图层置顶
+        label='Key Points'    # 图例标签
+    )
+    plt.scatter(
+        sell_points['time'],   # X轴：时间戳
+        sell_points['price'],  # Y轴：价格
+        s=120,                # 点大小
+        color='red',          # 填充色
+        edgecolor='gold',     # 边缘色
+        marker='o',           # 星形标记
         alpha=0.9,            # 透明度
         zorder=10,            # 图层置顶
         label='Key Points'    # 图例标签
