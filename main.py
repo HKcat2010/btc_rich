@@ -41,7 +41,7 @@ while True:
     kdj_15m = get_kdj.get_15m_kdj(account, sampling_count, n=9, m1=3, m2=3)
  
     # 计算布林带（默认Pandas方式）
-    bollinger_band_15m = bollinger.calculate_bollinger_bands(kdj_15m, window=20, num_std=2.5)
+    bollinger_band_15m = bollinger.calculate_bollinger_bands(kdj_15m, window=20, num_std=2)
 
     #判断买点
     buy_points = history_test.history_bolling_find_buy(bollinger_band_15m, kdj_15m, kdj_1m)
@@ -58,30 +58,30 @@ while True:
     plt.plot(bollinger_band_15m['middle_band'], label='Middle Band', color='blue')
     plt.plot(bollinger_band_15m['lower_band'], label='Lower Band', linestyle='--', color='green')
     plt.fill_between(bollinger_band_15m.index, bollinger_band_15m['upper_band'], bollinger_band_15m['lower_band'], alpha=0.1, color='grey')
-    plt.title('Bollinger Bands')
+    plt.title('GO1.0')
     plt.xlabel('Timestamp')
     plt.ylabel('Price')
     plt.scatter(
-        buy_points['time'],   # X轴：时间戳
-        buy_points['price'],  # Y轴：价格
-        s=120,                # 点大小
-        color='red',          # 填充色
-        edgecolor='gold',     # 边缘色
-        marker='x',           # 星形标记
-        alpha=0.9,            # 透明度
-        zorder=10,            # 图层置顶
-        label='Key Points'    # 图例标签
+        buy_points['time'],     # X轴：时间戳
+        buy_points['price'],    # Y轴：价格
+        s=50,                   # 点大小
+        color='red',            # 填充色
+        edgecolor='red',        # 边缘色
+        marker='x',             # 星形标记
+        alpha=0.9,              # 透明度
+        zorder=10,              # 图层置顶
+        label='buy'            # 图例标签
     )
     plt.scatter(
-        sell_points['time'],   # X轴：时间戳
-        sell_points['price'],  # Y轴：价格
-        s=120,                # 点大小
-        color='red',          # 填充色
-        edgecolor='gold',     # 边缘色
-        marker='o',           # 星形标记
-        alpha=0.9,            # 透明度
-        zorder=10,            # 图层置顶
-        label='Key Points'    # 图例标签
+        sell_points['time'],    # X轴：时间戳
+        sell_points['price'],   # Y轴：价格
+        s=50,                   # 点大小
+        color='green',          # 填充色
+        edgecolor='green',      # 边缘色
+        marker='x',             # 星形标记
+        alpha=0.9,              # 透明度
+        zorder=10,              # 图层置顶
+        label='sell'            # 图例标签
     )
     plt.legend()
     plt.xticks(rotation=45)
