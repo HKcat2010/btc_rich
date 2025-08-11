@@ -1,5 +1,40 @@
 from okx.app.utils import eprint
 import pandas as pd
+
+def is_time_to_buy(bollinger_band, kdj_15m, kdj_1m):
+    match_15m = False
+    if( float(bollinger_band['lower_band'].iat[-2]) > float(kdj_15m['low'].iat[-2])
+    and float(bollinger_band['lower_band'].iat[-2]) <= float(kdj_15m['high'].iat[-2])
+    and float(bollinger_band['lower_band'].iat[-1]) < float(kdj_15m['low'].iat[-1])
+    and float(kdj_15m['J'].iat[-1] < 25.0)
+    and float(kdj_15m['J'].iat[-2] < float(kdj_15m['J'].iat[-1]))       #J值转向
+    and float(kdj_15m['low'].iat[-2]) < float(kdj_15m['low'].iat[-1])): #低点抬高
+        match_15m = True
+
+    if match_15m: #满足 15min 要求
+        if( float(kdj_1m['J'].iat[-1]) < 10.0 ): #当前简单以 J<10 要求
+            print(f"{kdj_1m['ts'].iat[-1]}: 买入价格: {float(kdj_1m['close'].iat[-1])}")
+            return True
+
+    return False
+
+def is_time_to_sell(bollinger_band, kdj_15m, kdj_1m):
+    match_15m = False
+    if( float(bollinger_band['upper_band'].iat[-2]) < float(kdj_15m['high'].iat[-2])
+    and float(bollinger_band['upper_band'].iat[-2]) >= float(kdj_15m['low'].iat[-2])
+    and float(bollinger_band['upper_band'].iat[-1]) > float(kdj_15m['high'].iat[-1])
+    and float(kdj_15m['J'].iat[-1] > 85.0) # J 超买
+    and float(kdj_15m['J'].iat[-2]) > float(kdj_15m['J'].iat[-1]) #J值转向
+    and float(kdj_15m['high'].iat[-2]) > float(kdj_15m['high'].iat[-1])): #高点下跌
+        match_15m = True
+    
+    if match_15m: #满足 15min 要求
+        if( float(kdj_1m['J'].iat[-1]) > 90.0 ): #当前简单以 J>90 要求
+            print(f"{kdj_1m['ts'].iat[-1]}: 卖出价格: {float(kdj_1m['close'].iat[-1])}")
+            return True
+
+    return False
+
 def history_bolling_find_buy(bollinger_band, kdj_15m, kdj_1m):
     # 查找历史数据的买点
     print("history_bolling_find_buy begin")

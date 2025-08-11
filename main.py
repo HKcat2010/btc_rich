@@ -2,7 +2,7 @@ import time
 import numpy as np
 import pandas as pd
 import get_kdj
-import history_test
+import bollinger_kdj as bollinger_kdj
 import get_bollinger_bands as bollinger
 import matplotlib.pyplot as plt
 from okx.api import Account
@@ -11,12 +11,13 @@ from okx.app.utils import eprint
 
 # 永续合约行情不需要秘钥
 account = Account(
+
 flag = '0',
 proxies = {},
 proxy_host = None
 )
 sampling_count = 500 #采样数量
-sampling_interval = 1 #秒
+sampling_interval = 20 #秒
 last_time = time.time() + sampling_interval
 
 while True:
@@ -43,15 +44,26 @@ while True:
     # 计算布林带（默认Pandas方式）
     bollinger_band_15m = bollinger.calculate_bollinger_bands(kdj_15m, window=20, num_std=2)
 
-    #判断买点
-    buy_points = history_test.history_bolling_find_buy(bollinger_band_15m, kdj_15m, kdj_1m)
-    sell_points = history_test.history_bolling_find_sell(bollinger_band_15m, kdj_15m, kdj_1m)
-
     # 获取账户信息
-    balance_result = account.get_balance(ccy='USDT')
+    # balance_result = account.get_balance(ccy='USDT')
     # eprint(balance_result, length=20)
+    positions_result = account.get_positions(instType='SWAP')
+    eprint(positions_result, length=30)
+    if(positions_result['code'] == '0' or len(positions_result['data']) == 0):
+        if(bollinger_kdj.is_time_to_buy(bollinger_band_15m, kdj_15m, kdj_1m)):
+            log_buy = print(f"time: {local_time_str} buy price: {kdj_1m['close'][-1]} ")
+            print(log_buy)
+    else:
+        if(bollinger_kdj.is_time_to_sell(bollinger_band_15m, kdj_15m, kdj_1m)):
+            log_sell = print(f"time: {local_time_str} sell price: {kdj_1m['close'][-1]} ")
+            print(log_sell)
+
+    #判断买点
+    #buy_points = bollinger_kdj.history_bolling_find_buy(bollinger_band_15m, kdj_15m, kdj_1m)
+    #sell_points = bollinger_kdj.history_bolling_find_sell(bollinger_band_15m, kdj_15m, kdj_1m)
 
     # 可视化
+    '''
     plt.figure(figsize=(12, 6))
     plt.plot(bollinger_band_15m.index, bollinger_band_15m['close'], label='Close Price', color='black')
     plt.plot(bollinger_band_15m['upper_band'], label='Upper Band', linestyle='--', color='red')
@@ -87,3 +99,4 @@ while True:
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
+    '''
