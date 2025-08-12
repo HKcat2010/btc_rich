@@ -38,9 +38,9 @@ with open(log_file, 'a', encoding='utf-8') as log_file:
 
         try:
             # 获取1分钟KDJ
-            kdj_1m = get_kdj.get_1m_kdj(account, instId='BTC-USDT', sampling_count, n=9, m1=3, m2=3)
+            kdj_1m = get_kdj.get_1m_kdj(account, 'BTC-USDT', sampling_count, n=9, m1=3, m2=3)
             # 获取15分钟KDJ
-            kdj_15m = get_kdj.get_15m_kdj(account, instId='BTC-USDT', sampling_count, n=9, m1=3, m2=3)
+            kdj_15m = get_kdj.get_15m_kdj(account, 'BTC-USDT', sampling_count, n=9, m1=3, m2=3)
         
             # 计算布林带（默认Pandas方式）
             bollinger_band_15m = bollinger.calculate_bollinger_bands(kdj_15m, window=20, num_std=2)
