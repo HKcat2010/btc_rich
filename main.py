@@ -18,10 +18,10 @@ proxy_host = None
 )
 sampling_count = 200 #采样数量
 sampling_interval = 1 #秒
-last_time = time.time() + sampling_interval
+last_time = time.time()
 log_file = time.strftime('%Y_%m_%d_%H_%M_%S', time.localtime(time.time())) + "_bs.log"
-with open(log_file, 'a', encoding='utf-8') as log_file:
 
+with open(log_file, 'a', encoding='utf-8') as log_file:
     while True:
         #打印时间戳
         timestamp = time.time()
@@ -30,7 +30,7 @@ with open(log_file, 'a', encoding='utf-8') as log_file:
         
         log_file.write(f"本地时间: {local_time_str}")
 
-        if(timestamp - last_time < sampling_interval):
+        if(timestamp <= last_time + sampling_interval ):
             time.sleep(1)
             continue
         else:
