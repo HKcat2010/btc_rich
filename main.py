@@ -28,7 +28,7 @@ with open(log_file, 'a', encoding='utf-8') as log_file:
         local_time = time.localtime(timestamp)
         local_time_str = time.strftime('%Y-%m-%d %H:%M:%S', local_time)
         
-        log_file.write(f"本地时间: {local_time_str}")
+        log_file.write(f"本地时间: {local_time_str} \n")
 
         if(timestamp <= last_time + sampling_interval ):
             time.sleep(1)
@@ -41,16 +41,16 @@ with open(log_file, 'a', encoding='utf-8') as log_file:
             kdj_1m = get_kdj.get_1m_kdj(account, 'BTC-USDT', sampling_count, n=9, m1=3, m2=3)
             # 获取15分钟KDJ
             kdj_15m = get_kdj.get_15m_kdj(account, 'BTC-USDT', sampling_count, n=9, m1=3, m2=3)
-            log_file.write(f"本地时间: {local_time_str} get kdj")
+            log_file.write(f"本地时间: {local_time_str} get kdj \n")
 
             # 计算布林带（默认Pandas方式）
             bollinger_band_15m = bollinger.calculate_bollinger_bands(kdj_15m, window=20, num_std=2)
-            log_file.write(f"本地时间: {local_time_str} calc bollinger")
+            log_file.write(f"本地时间: {local_time_str} calc bollinger \n")
 
             # 获取账户信息
             positions_result = account.get_positions(instType='SWAP')
             #eprint(positions_result, length=30)
-            log_file.write(f"本地时间: {local_time_str} get position")
+            log_file.write(f"本地时间: {local_time_str} get position \n")
 
         except okx.api._client.ResponseStatusError as e:
             #print(f"time: {local_time_str} get data err: {str(e)} \n")
