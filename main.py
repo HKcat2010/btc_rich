@@ -28,26 +28,30 @@ with open(log_file, 'a', encoding='utf-8') as log_file:
         local_time = time.localtime(timestamp)
         local_time_str = time.strftime('%Y-%m-%d %H:%M:%S', local_time)
         
+        print(f"本地时间: {local_time_str}")
+
         if(timestamp - last_time < sampling_interval):
             time.sleep(1)
             continue
         else:
             last_time = timestamp
 
-        print(f"本地时间: {local_time_str}")
-
         try:
             # 获取1分钟KDJ
             kdj_1m = get_kdj.get_1m_kdj(account, 'BTC-USDT', sampling_count, n=9, m1=3, m2=3)
             # 获取15分钟KDJ
             kdj_15m = get_kdj.get_15m_kdj(account, 'BTC-USDT', sampling_count, n=9, m1=3, m2=3)
-        
+            print(f"本地时间: {local_time_str} get kdj")
+
             # 计算布林带（默认Pandas方式）
             bollinger_band_15m = bollinger.calculate_bollinger_bands(kdj_15m, window=20, num_std=2)
+            print(f"本地时间: {local_time_str} calc bollinger")
 
             # 获取账户信息
             positions_result = account.get_positions(instType='SWAP')
             #eprint(positions_result, length=30)
+            print(f"本地时间: {local_time_str} get position")
+
         except okx.api._client.ResponseStatusError as e:
             print(f"time: {local_time_str} get data err: {str(e)} \n")
             log_file.write(f"time: {local_time_str} get data err: {str(e)} \n")
