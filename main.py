@@ -2,7 +2,7 @@ import time
 import numpy as np
 import pandas as pd
 import get_kdj
-import bollinger_kdj as bollinger_kdj
+import bs_boll_kdj
 import get_bollinger_bands as bollinger
 import matplotlib.pyplot as plt
 from okx.api import Account
@@ -17,7 +17,7 @@ proxies = {},
 proxy_host = None
 )
 sampling_count = 500 #采样数量
-sampling_interval = 10 #秒
+sampling_interval = 15 #秒
 last_time = time.time() + sampling_interval
 log_file = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) + ".bs.log"
 with open(log_file, 'a', encoding='utf-8') as log_file:
@@ -36,33 +36,38 @@ with open(log_file, 'a', encoding='utf-8') as log_file:
 
         print(f"本地时间: {local_time_str}")
 
-        # 获取1分钟KDJ
-        kdj_1m = get_kdj.get_1m_kdj(account, sampling_count, n=9, m1=3, m2=3)
-        # 获取15分钟KDJ
-        kdj_15m = get_kdj.get_15m_kdj(account, sampling_count, n=9, m1=3, m2=3)
-    
-        # 计算布林带（默认Pandas方式）
-        bollinger_band_15m = bollinger.calculate_bollinger_bands(kdj_15m, window=20, num_std=2)
+        try:
+            # 获取1分钟KDJ
+            kdj_1m = get_kdj.get_1m_kdj(account, instId='BTC-USDT', sampling_count, n=9, m1=3, m2=3)
+            # 获取15分钟KDJ
+            kdj_15m = get_kdj.get_15m_kdj(account, instId='BTC-USDT', sampling_count, n=9, m1=3, m2=3)
+        
+            # 计算布林带（默认Pandas方式）
+            bollinger_band_15m = bollinger.calculate_bollinger_bands(kdj_15m, window=20, num_std=2)
 
-        # 获取账户信息
-        # balance_result = account.get_balance(ccy='USDT')
-        # eprint(balance_result, length=20)
-        positions_result = account.get_positions(instType='SWAP')
-        #eprint(positions_result, length=30)
+            # 获取账户信息
+            positions_result = account.get_positions(instType='SWAP')
+            #eprint(positions_result, length=30)
+        except okx.api._client.ResponseStatusError as e:
+            print(f"time: {local_time_str} get data err: {str(e)} \n")
+            log_file.write(f"time: {local_time_str} get data err: {str(e)} \n")
+            time.sleep(5) #5秒 后循环重试，必要时清仓
+            continue
+
+        # 没有持仓 判断买点
         if(positions_result['code'] == '0' or len(positions_result['data']) == 0):
-            if(bollinger_kdj.is_time_to_buy(bollinger_band_15m, kdj_15m, kdj_1m)):
+            if(bs_boll_kdj.is_time_to_buy(bollinger_band_15m, kdj_15m, kdj_1m)):
                 print(f"time: {local_time_str} buy price: {kdj_1m['close'][-1]} ")
-                log_file.write(f"buy time: {local_time_str} price: {kdj_1m['close'][-1]} ")
-                log_file.write('\n')
+                log_file.write(f"buy time: {local_time_str} price: {kdj_1m['close'][-1]} \n")
         else:
-            if(bollinger_kdj.is_time_to_sell(bollinger_band_15m, kdj_15m, kdj_1m)):
+            #有持仓 判断卖点
+            if(bs_boll_kdj.is_time_to_sell(bollinger_band_15m, kdj_15m, kdj_1m)):
                 print(f"time: {local_time_str} sell price: {kdj_1m['close'][-1]} ")
-                log_file.write(f"sell time: {local_time_str} price: {kdj_1m['close'][-1]} ")
-                log_file.write('\n')
+                log_file.write(f"sell time: {local_time_str} price: {kdj_1m['close'][-1]} \n")
 
-        #判断买点
-        #buy_points = bollinger_kdj.history_bolling_find_buy(bollinger_band_15m, kdj_15m, kdj_1m)
-        #sell_points = bollinger_kdj.history_bolling_find_sell(bollinger_band_15m, kdj_15m, kdj_1m)
+        # 回测 买卖点
+        #buy_points = bs_boll_kdj.history_bolling_find_buy(bollinger_band_15m, kdj_15m, kdj_1m)
+        #sell_points = bs_boll_kdj.history_bolling_find_sell(bollinger_band_15m, kdj_15m, kdj_1m)
 
         # 可视化
         '''

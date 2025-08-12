@@ -4,7 +4,7 @@ import pandas as pd
 import time
 import kdj
 
-def get_15m_kdj(account, len=50, n=9, m1=3, m2=3):
+def get_15m_kdj(account, instId='BTC-USDT', len=50, n=9, m1=3, m2=3):
     # 永续合约行情不需要秘钥
     # 使用http和https代理，proxies={'http':'xxxxx','https:':'xxxxx'}，与requests中的proxies参数规则相同
     # 转发：需搭建转发服务器，可参考：https://github.com/pyted/okx_resender
@@ -19,7 +19,7 @@ def get_15m_kdj(account, len=50, n=9, m1=3, m2=3):
     local_time_str = time.strftime('%Y-%m-%d %H:%M:%S', local_time)
     print(f"本地时间: {local_time_str}")
     candle = market.update_history_candle(
-        instId='BTC-USDT',
+        instId=instId,
         length=len,  # 保留数量
         end=local_time_str,  # end默认为本地计算机时间戳
         bar='15m',
@@ -38,7 +38,7 @@ def get_15m_kdj(account, len=50, n=9, m1=3, m2=3):
     kdj_result['ts'] = candle_arr['ts']
     return kdj_result
 
-def get_1m_kdj(account, len=50, n=9, m1=3, m2=3):
+def get_1m_kdj(account, instId='BTC-USDT', len=50, n=9, m1=3, m2=3):
     # 永续合约行情不需要秘钥
     # 使用http和https代理，proxies={'http':'xxxxx','https:':'xxxxx'}，与requests中的proxies参数规则相同
     # 转发：需搭建转发服务器，可参考：https://github.com/pyted/okx_resender
@@ -53,7 +53,7 @@ def get_1m_kdj(account, len=50, n=9, m1=3, m2=3):
     local_time_str = time.strftime('%Y-%m-%d %H:%M:%S', local_time)
     print(f"本地时间: {local_time_str}")
     candle = market.update_history_candle(
-        instId='BTC-USDT',
+        instId=instId,
         length=len,             # 保留数量
         end=local_time_str,     # end默认为本地计算机时间戳
         bar='1m',
