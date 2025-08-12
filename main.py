@@ -17,11 +17,11 @@ proxies = {},
 proxy_host = None
 )
 sampling_count = 200 #采样数量
-sampling_interval = 1 #秒
+sampling_interval = 10 #秒
 last_time = time.time()
 log_file = time.strftime('%Y_%m_%d_%H_%M_%S', time.localtime(time.time())) + "_bs.log"
 
-with open(log_file, 'a', encoding='utf-8') as log_file:
+with open(log_file, 'a', buffering=1, encoding='utf-8') as log_file:
     while True:
         #打印时间戳
         timestamp = time.time()
