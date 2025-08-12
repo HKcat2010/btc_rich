@@ -19,7 +19,7 @@ proxy_host = None
 sampling_count = 500 #采样数量
 sampling_interval = 15 #秒
 last_time = time.time() + sampling_interval
-log_file = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())) + ".bs.log"
+log_file = time.strftime('%Y_%m_%d_%H_%M_%S', time.localtime(time.time())) + "_bs.log"
 with open(log_file, 'a', encoding='utf-8') as log_file:
 
     while True:
