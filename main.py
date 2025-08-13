@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import get_kdj
 import bs_boll_kdj
+import logger
 import get_bollinger_bands as bollinger
 import matplotlib.pyplot as plt
 from okx.api import Account
@@ -19,95 +20,95 @@ proxy_host = None
 sampling_count = 200 #采样数量
 sampling_interval = 10 #秒
 
-def main(log_file="./main.log"):
+def main(logger):
 
-    with open(log_file, 'a', buffering=1, encoding='utf-8') as log_file:
-        last_time = time.time()
-        while True:
-            #打印时间戳
-            timestamp = time.time()
-            local_time = time.localtime(timestamp)
-            local_time_str = time.strftime('%Y-%m-%d %H:%M:%S', local_time)
-            
-            log_file.write(f"本地时间: {local_time_str} \n")
+    last_time = time.time()
 
-            if(timestamp <= last_time + sampling_interval ):
-                time.sleep(1)
-                continue
-            else:
-                last_time = timestamp
+    while True:
+        #打印时间戳
+        timestamp = time.time()
+        local_time = time.localtime(timestamp)
+        local_time_str = time.strftime('%Y-%m-%d %H:%M:%S', local_time)
+        
+        logger.info(f"本地时间: {local_time_str} \n")
 
-            try:
-                # 获取1分钟KDJ
-                kdj_1m = get_kdj.get_1m_kdj(account, 'BTC-USDT', sampling_count, n=9, m1=3, m2=3)
-                # 获取15分钟KDJ
-                kdj_15m = get_kdj.get_15m_kdj(account, 'BTC-USDT', sampling_count, n=9, m1=3, m2=3)
-                log_file.write(f"本地时间: {local_time_str} get kdj \n")
+        if(timestamp <= last_time + sampling_interval ):
+            time.sleep(1)
+            continue
+        else:
+            last_time = timestamp
 
-                # 计算布林带（默认Pandas方式）
-                bollinger_band_15m = bollinger.calculate_bollinger_bands(kdj_15m, window=20, num_std=2)
-                log_file.write(f"本地时间: {local_time_str} calc bollinger \n")
+        try:
+            # 获取1分钟KDJ
+            kdj_1m = get_kdj.get_1m_kdj(account, 'BTC-USDT', sampling_count, n=9, m1=3, m2=3)
+            # 获取15分钟KDJ
+            kdj_15m = get_kdj.get_15m_kdj(account, 'BTC-USDT', sampling_count, n=9, m1=3, m2=3)
+            logger.info(f"本地时间: {local_time_str} get kdj \n")
 
-                # 获取账户信息
-                positions_result = account.get_positions(instType='SWAP')
-                #eprint(positions_result, length=30)
-                log_file.write(f"本地时间: {local_time_str} get position \n")
+            # 计算布林带（默认Pandas方式）
+            bollinger_band_15m = bollinger.calculate_bollinger_bands(kdj_15m, window=20, num_std=2)
+            logger.info(f"本地时间: {local_time_str} calc bollinger \n")
 
-            except Exception as e:
-                log_file.write(f"time: {local_time_str} get err: {str(e)} \n")
-                time.sleep(5) #5秒 后循环重试，必要时清仓
-                continue
+            # 获取账户信息
+            positions_result = account.get_positions(instType='SWAP')
+            #eprint(positions_result, length=30)
+            logger.info(f"本地时间: {local_time_str} get position \n")
 
-            # 没有持仓 判断买点
-            if(positions_result['code'] == '0' or len(positions_result['data']) == 0):
-                if(bs_boll_kdj.is_time_to_buy(bollinger_band_15m, kdj_15m, kdj_1m)):
-                    #print(f"time: {local_time_str} buy price: {kdj_1m['close'][-1]} ")
-                    log_file.write(f"buy time: {local_time_str} price: {kdj_1m['close'][-1]} \n")
-            else:
-                #有持仓 判断卖点
-                if(bs_boll_kdj.is_time_to_sell(bollinger_band_15m, kdj_15m, kdj_1m)):
-                    #print(f"time: {local_time_str} sell price: {kdj_1m['close'][-1]} ")
-                    log_file.write(f"sell time: {local_time_str} price: {kdj_1m['close'][-1]} \n")
+        except Exception as e:
+            logger.error(f"time: {local_time_str} get err: {str(e)} \n")
+            time.sleep(5) #5秒 后循环重试，必要时清仓
+            continue
 
-            # 回测 买卖点
-            #buy_points = bs_boll_kdj.history_bolling_find_buy(bollinger_band_15m, kdj_15m, kdj_1m)
-            #sell_points = bs_boll_kdj.history_bolling_find_sell(bollinger_band_15m, kdj_15m, kdj_1m)
+        # 没有持仓 判断买点
+        if(positions_result['code'] == '0' or len(positions_result['data']) == 0):
+            if(bs_boll_kdj.is_time_to_buy(bollinger_band_15m, kdj_15m, kdj_1m)):
+                #print(f"time: {local_time_str} buy price: {kdj_1m['close'][-1]} ")
+                logger.info(f"buy time: {local_time_str} price: {kdj_1m['close'][-1]} \n")
+        else:
+            #有持仓 判断卖点
+            if(bs_boll_kdj.is_time_to_sell(bollinger_band_15m, kdj_15m, kdj_1m)):
+                #print(f"time: {local_time_str} sell price: {kdj_1m['close'][-1]} ")
+                logger.info(f"sell time: {local_time_str} price: {kdj_1m['close'][-1]} \n")
 
-            # 可视化
-            '''
-            plt.figure(figsize=(12, 6))
-            plt.plot(bollinger_band_15m.index, bollinger_band_15m['close'], label='Close Price', color='black')
-            plt.plot(bollinger_band_15m['upper_band'], label='Upper Band', linestyle='--', color='red')
-            plt.plot(bollinger_band_15m['middle_band'], label='Middle Band', color='blue')
-            plt.plot(bollinger_band_15m['lower_band'], label='Lower Band', linestyle='--', color='green')
-            plt.fill_between(bollinger_band_15m.index, bollinger_band_15m['upper_band'], bollinger_band_15m['lower_band'], alpha=0.1, color='grey')
-            plt.title('GO1.0')
-            plt.xlabel('Timestamp')
-            plt.ylabel('Price')
-            plt.scatter(
-                buy_points['time'],     # X轴：时间戳
-                buy_points['price'],    # Y轴：价格
-                s=50,                   # 点大小
-                color='red',            # 填充色
-                edgecolor='red',        # 边缘色
-                marker='x',             # 星形标记
-                alpha=0.9,              # 透明度
-                zorder=10,              # 图层置顶
-                label='buy'            # 图例标签
-            )
-            plt.scatter(
-                sell_points['time'],    # X轴：时间戳
-                sell_points['price'],   # Y轴：价格
-                s=50,                   # 点大小
-                color='green',          # 填充色
-                edgecolor='green',      # 边缘色
-                marker='x',             # 星形标记
-                alpha=0.9,              # 透明度
-                zorder=10,              # 图层置顶
-                label='sell'            # 图例标签
-            )
-            plt.legend()
-            plt.xticks(rotation=45)
-            plt.tight_layout()
-            plt.show()
-            '''
+        # 回测 买卖点
+        #buy_points = bs_boll_kdj.history_bolling_find_buy(bollinger_band_15m, kdj_15m, kdj_1m)
+        #sell_points = bs_boll_kdj.history_bolling_find_sell(bollinger_band_15m, kdj_15m, kdj_1m)
+
+        # 可视化
+        '''
+        plt.figure(figsize=(12, 6))
+        plt.plot(bollinger_band_15m.index, bollinger_band_15m['close'], label='Close Price', color='black')
+        plt.plot(bollinger_band_15m['upper_band'], label='Upper Band', linestyle='--', color='red')
+        plt.plot(bollinger_band_15m['middle_band'], label='Middle Band', color='blue')
+        plt.plot(bollinger_band_15m['lower_band'], label='Lower Band', linestyle='--', color='green')
+        plt.fill_between(bollinger_band_15m.index, bollinger_band_15m['upper_band'], bollinger_band_15m['lower_band'], alpha=0.1, color='grey')
+        plt.title('GO1.0')
+        plt.xlabel('Timestamp')
+        plt.ylabel('Price')
+        plt.scatter(
+            buy_points['time'],     # X轴：时间戳
+            buy_points['price'],    # Y轴：价格
+            s=50,                   # 点大小
+            color='red',            # 填充色
+            edgecolor='red',        # 边缘色
+            marker='x',             # 星形标记
+            alpha=0.9,              # 透明度
+            zorder=10,              # 图层置顶
+            label='buy'            # 图例标签
+        )
+        plt.scatter(
+            sell_points['time'],    # X轴：时间戳
+            sell_points['price'],   # Y轴：价格
+            s=50,                   # 点大小
+            color='green',          # 填充色
+            edgecolor='green',      # 边缘色
+            marker='x',             # 星形标记
+            alpha=0.9,              # 透明度
+            zorder=10,              # 图层置顶
+            label='sell'            # 图例标签
+        )
+        plt.legend()
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+        '''
