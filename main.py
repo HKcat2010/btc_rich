@@ -20,7 +20,9 @@ proxy_host = None
 sampling_count = 200 #采样数量
 sampling_interval = 10 #秒
 
-def main(logger):
+def main():
+
+    logger = logger.SingletonLogger()
 
     last_time = time.time()
 
