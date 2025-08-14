@@ -61,8 +61,8 @@ class ImmediateDiskLogger:
         console_handler.setFormatter(formatter)
         console_handler.setLevel(log_level)
         self.logger.addHandler(console_handler)
-        sys.stdout = logger.handlers[0].stream
-        sys.stderr = logger.handlers[0].stream
+        sys.stdout = self.logger.handlers[0].stream
+        sys.stderr = self.logger.handlers[0].stream
         self.logger.info(f"日志文件 {name} 初始化完成")
     
     def debug(self, message: str):
