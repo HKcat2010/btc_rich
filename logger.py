@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -33,7 +34,7 @@ class ImmediateDiskLogger:
         
         # 设置日志格式
         formatter = logging.Formatter(
-            '%(asctime)s  %(levelname)-8s  %(filename)s:%(lineno)d  %(message)s',
+            '%(asctime)s %(levelname)-8s %(filename)s:%(lineno)d  %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S'
         )
         
@@ -60,6 +61,8 @@ class ImmediateDiskLogger:
         console_handler.setFormatter(formatter)
         console_handler.setLevel(log_level)
         self.logger.addHandler(console_handler)
+        sys.stdout = logger.handlers[0].stream
+        sys.stderr = logger.handlers[0].stream
         self.logger.info(f"日志文件 {name} 初始化完成")
     
     def debug(self, message: str):

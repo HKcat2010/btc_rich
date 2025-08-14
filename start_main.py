@@ -5,7 +5,6 @@ import time
 
 logger = logger.ImmediateDiskLogger(
     name = time.strftime('%Y_%m_%d_%H_%M_%S', time.localtime(time.time())) + ".log",
-    log_dir = "./",
 )
 
 while True:
