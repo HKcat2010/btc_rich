@@ -39,7 +39,7 @@ class ImmediateDiskLogger:
         )
         
         # 创建文件处理器（确保立即落盘）
-        log_file = self.log_dir / f"{name}.log"
+        log_file = self.log_dir / f"{name}"
         file_handler = RotatingFileHandler(
             log_file,
             mode='a',
