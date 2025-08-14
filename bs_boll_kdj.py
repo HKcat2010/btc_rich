@@ -4,8 +4,7 @@ import logger
 
 def is_time_to_buy(logger, bollinger_band, kdj_15m, kdj_1m):
     match_15m = False
-    logger.info(f" lb[-2] {float(bollinger_band['lower_band'].iat[-2])} lb[-1] {float(bollinger_band['lower_band'].iat[-1])}"
-                +f" 15m lp[-2].low {kdj_15m['low'].iat[-2]} lp[-2].high {float(kdj_15m['high'].iat[-2])} lp[-1].low {float(kdj_15m['low'].iat[-1]})"
+    logger.info(f" lb[-2] {float(bollinger_band['lower_band'].iat[-2])} lb[-1] {float(bollinger_band['lower_band'].iat[-1])} 15m lp[-2].low {kdj_15m['low'].iat[-2]} lp[-2].high {float(kdj_15m['high'].iat[-2])} lp[-1].low {float(kdj_15m['low'].iat[-1])}")
 
     if( float(bollinger_band['lower_band'].iat[-2]) > float(kdj_15m['low'].iat[-2])
     and float(bollinger_band['lower_band'].iat[-2]) <= float(kdj_15m['high'].iat[-2])
