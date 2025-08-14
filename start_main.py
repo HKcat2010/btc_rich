@@ -3,7 +3,7 @@ import main
 import logger
 import time
 
-logger = ImmediateDiskLogger(
+logger = logger.ImmediateDiskLogger(
     name = time.strftime('%Y_%m_%d_%H_%M_%S', time.localtime(time.time())) + ".log",
     log_dir = "./",
     log_level = logging.DEBUG
