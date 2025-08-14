@@ -33,7 +33,7 @@ class ImmediateDiskLogger:
         
         # 设置日志格式
         formatter = logging.Formatter(
-            '%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(message)s',
+            '%(asctime)s  %(levelname)-8s  %(filename)s:%(lineno)d  %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S'
         )
         
