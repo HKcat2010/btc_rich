@@ -13,4 +13,4 @@ while True:
     logger.info("main start ...")
     p.start()
     p.join()
-    logger.critical(" main program exit !!!") # 子进程崩溃不影响主进程
+    logger.critical(f" main program exit err code {p.exitcode} !!!") # 子进程崩溃不影响主进程

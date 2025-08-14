@@ -1,8 +1,12 @@
 from okx.app.utils import eprint
 import pandas as pd
+import logger
 
-def is_time_to_buy(bollinger_band, kdj_15m, kdj_1m):
+def is_time_to_buy(logger, bollinger_band, kdj_15m, kdj_1m):
     match_15m = False
+    logger.info(f" lb[-2] {float(bollinger_band['lower_band'].iat[-2])} lb[-1] {float(bollinger_band['lower_band'].iat[-1])}"
+                +f" 15m lp[-2].low {kdj_15m['low'].iat[-2]} lp[-2].high {float(kdj_15m['high'].iat[-2])} lp[-1].low {float(kdj_15m['low'].iat[-1]})"
+
     if( float(bollinger_band['lower_band'].iat[-2]) > float(kdj_15m['low'].iat[-2])
     and float(bollinger_band['lower_band'].iat[-2]) <= float(kdj_15m['high'].iat[-2])
     and float(bollinger_band['lower_band'].iat[-1]) < float(kdj_15m['low'].iat[-1])
@@ -13,12 +17,12 @@ def is_time_to_buy(bollinger_band, kdj_15m, kdj_1m):
 
     if match_15m: #满足 15min 要求
         if( float(kdj_1m['J'].iat[-1]) < 10.0 ): #当前简单以 J<10 要求
-            print(f"{kdj_1m['ts'].iat[-1]}: 买入价格: {float(kdj_1m['close'].iat[-1])}")
+            logger.critical(f"{kdj_1m['ts'].iat[-1]}: 买入价格: {float(kdj_1m['close'].iat[-1])}")
             return True
 
     return False
 
-def is_time_to_sell(bollinger_band, kdj_15m, kdj_1m):
+def is_time_to_sell(logger, bollinger_band, kdj_15m, kdj_1m):
     match_15m = False
     if( float(bollinger_band['upper_band'].iat[-2]) < float(kdj_15m['high'].iat[-2])
     and float(bollinger_band['upper_band'].iat[-2]) >= float(kdj_15m['low'].iat[-2])
@@ -30,7 +34,7 @@ def is_time_to_sell(bollinger_band, kdj_15m, kdj_1m):
     
     if match_15m: #满足 15min 要求
         if( float(kdj_1m['J'].iat[-1]) > 90.0 ): #当前简单以 J>90 要求
-            print(f"{kdj_1m['ts'].iat[-1]}: 卖出价格: {float(kdj_1m['close'].iat[-1])}")
+            logger.critical(f"{kdj_1m['ts'].iat[-1]}: 卖出价格: {float(kdj_1m['close'].iat[-1])}")
             return True
 
     return False

@@ -54,18 +54,18 @@ def main(logger):
             logger.info(f"本地时间: {local_time_str} get position \n")
 
         except Exception as e:
-            logger.error(f"time: {local_time_str} get err: {str(e)} \n")
+            logger.error(f"time: {local_time_str} err exit : {str(e)} \n")
             time.sleep(5) #5秒 后循环重试，必要时清仓
-            continue
+            sys.exit(e) #退出进程 由守护进程重新拉起
 
         # 没有持仓 判断买点
         if(positions_result['code'] == '0' or len(positions_result['data']) == 0):
-            if(bs_boll_kdj.is_time_to_buy(bollinger_band_15m, kdj_15m, kdj_1m)):
+            if(bs_boll_kdj.is_time_to_buy(logger, bollinger_band_15m, kdj_15m, kdj_1m)):
                 #print(f"time: {local_time_str} buy price: {kdj_1m['close'][-1]} ")
                 logger.info(f"buy time: {local_time_str} price: {kdj_1m['close'][-1]} \n")
         else:
             #有持仓 判断卖点
-            if(bs_boll_kdj.is_time_to_sell(bollinger_band_15m, kdj_15m, kdj_1m)):
+            if(bs_boll_kdj.is_time_to_sell(logger, bollinger_band_15m, kdj_15m, kdj_1m)):
                 #print(f"time: {local_time_str} sell price: {kdj_1m['close'][-1]} ")
                 logger.info(f"sell time: {local_time_str} price: {kdj_1m['close'][-1]} \n")
 
