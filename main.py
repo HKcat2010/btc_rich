@@ -10,20 +10,17 @@ from okx.api import Account
 from okx.app import OkxSWAP
 from okx.app.utils import eprint
 
-account = Account(
+def main(logger):
 
-flag = '0',
-proxies = {},
-proxy_host = None
-)
+    account = Account(
+        
+        flag = '0',
+        proxies = {},
+        proxy_host = None
+    )
 
-sampling_count = 200 #采样数量
-sampling_interval = 10 #秒
-
-def main():
-
-    logger = logger.SingletonLogger()
-
+    sampling_count = 200 #采样数量
+    sampling_interval = 10 #秒
     last_time = time.time()
 
     while True:

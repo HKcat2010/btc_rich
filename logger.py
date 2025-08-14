@@ -1,71 +1,87 @@
 import logging
 import os
-import time
 from logging.handlers import RotatingFileHandler
-from concurrent_log_handler import ConcurrentRotatingFileHandler
 from pathlib import Path
 
-class SingletonLogger:
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        """单例模式实现，确保全局唯一日志实例"""
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance.__init_logger()  # 仅初始化一次
-        return cls._instance
-
-    def __init_logger(self):
-        """配置日志器（线程安全 + 多进程安全）"""
-        self.logger = logging.getLogger("SingletonLogger")
-        self.logger.setLevel(logging.DEBUG)  # 默认日志级别
-
-        # 日志格式（含时间戳、进程ID、日志级别）
+class ImmediateDiskLogger:
+    """
+    支持多级日志记录并确保实时落盘的日志模块
+    """
+    
+    def __init__(self, 
+                 name: str = "app", 
+                 log_dir: str = "logs",
+                 log_level: int = logging.DEBUG,
+                 max_bytes: int = 10 * 1024 * 1024,  # 10MB
+                 backup_count: int = 5):
+        """
+        初始化日志记录器
+        
+        :param name: 日志记录器名称
+        :param log_dir: 日志目录路径
+        :param log_level: 日志级别
+        :param max_bytes: 单个日志文件最大字节数
+        :param backup_count: 保留的日志备份数量
+        """
+        # 创建日志目录
+        self.log_dir = Path(log_dir)
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 创建日志记录器
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(log_level)
+        
+        # 设置日志格式
         formatter = logging.Formatter(
-            "%(asctime)s.%(msecs)03d | PID:%(process)d | %(levelname)-8s | %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
+            '%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
         )
-
-        # 多进程安全的文件处理器（追加模式，崩溃后自动恢复）
-        log_path = Path(time.strftime('%Y_%m_%d_%H_%M_%S', time.localtime(time.time())) + ".log").absolute()
-        file_handler = ConcurrentRotatingFileHandler(
-            filename=log_path,
-            mode="a",  # 追加模式，确保崩溃后继续写入[6,8](@ref)
-            maxBytes=10 * 1024 * 1024,  # 单个日志最大10MB
-            backupCount=5,
-            encoding="utf-8",
-            use_gzip=False
+        
+        # 创建文件处理器（确保立即落盘）
+        log_file = self.log_dir / f"{name}.log"
+        file_handler = RotatingFileHandler(
+            log_file,
+            mode='a',
+            maxBytes=max_bytes,
+            backupCount=backup_count,
+            encoding='utf-8'
         )
         file_handler.setFormatter(formatter)
-        file_handler.setLevel(logging.INFO)  # 文件日志级别
-
-        # 强制每次写入后刷新到磁盘（避免缓存丢失）
-        def safe_flush():
-            file_handler.stream.flush()
-            os.fsync(file_handler.stream.fileno())  # 确保物理落盘[1](@ref)
-        file_handler.flush = safe_flush
-
-        # 控制台处理器（可选）
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        console_handler.setLevel(logging.DEBUG)
-
+        file_handler.setLevel(log_level)
+        
+        # 强制立即刷新缓冲区
+        file_handler.stream.flush = lambda: os.fsync(file_handler.stream.fileno())
+        
         # 添加处理器
         self.logger.addHandler(file_handler)
+        
+        # 添加控制台处理器（可选）
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        console_handler.setLevel(log_level)
         self.logger.addHandler(console_handler)
-
-    # 日志记录方法
-    def debug(self, msg):
-        self.logger.debug(msg)
+        self.logger.info(f"日志文件 {name} 初始化完成")
     
-    def info(self, msg):
-        self.logger.info(msg)
+    def debug(self, message: str):
+        """记录调试信息"""
+        self.logger.debug(message)
     
-    def warning(self, msg):
-        self.logger.warning(msg)
+    def info(self, message: str):
+        """记录常规信息"""
+        self.logger.info(message)
     
-    def error(self, msg, exc_info=False):
-        self.logger.error(msg, exc_info=exc_info)  # 自动捕获异常堆栈[7](@ref)
+    def warning(self, message: str):
+        """记录警告信息"""
+        self.logger.warning(message)
     
-    def critical(self, msg, exc_info=False):
-        self.logger.critical(msg, exc_info=exc_info)
+    def error(self, message: str, exc_info: bool = False):
+        """记录错误信息"""
+        self.logger.error(message, exc_info=exc_info)
+    
+    def critical(self, message: str, exc_info: bool = False):
+        """记录严重错误信息"""
+        self.logger.critical(message, exc_info=exc_info)
+    
+    def exception(self, message: str):
+        """记录异常信息（自动包含堆栈跟踪）"""
+        self.logger.exception(message)
