@@ -2,6 +2,7 @@ import time
 import numpy as np
 import pandas as pd
 import get_kdj
+import sys
 import bs_boll_kdj
 import logger
 import get_bollinger_bands as bollinger
@@ -69,12 +70,12 @@ def main(logger):
                 #print(f"time: {local_time_str} sell price: {kdj_1m['close'][-1]} ")
                 logger.info(f"sell time: {local_time_str} price: {kdj_1m['close'][-1]} \n")
 
-        # 回测 买卖点
-        #buy_points = bs_boll_kdj.history_bolling_find_buy(bollinger_band_15m, kdj_15m, kdj_1m)
-        #sell_points = bs_boll_kdj.history_bolling_find_sell(bollinger_band_15m, kdj_15m, kdj_1m)
-
-        # 可视化
-        '''
+# 回测 买卖点
+# 可视化
+#'''
+        buy_points = bs_boll_kdj.history_bolling_find_buy(bollinger_band_15m, kdj_15m, kdj_1m)
+        sell_points = bs_boll_kdj.history_bolling_find_sell(bollinger_band_15m, kdj_15m, kdj_1m)
+        
         plt.figure(figsize=(12, 6))
         plt.plot(bollinger_band_15m.index, bollinger_band_15m['close'], label='Close Price', color='black')
         plt.plot(bollinger_band_15m['upper_band'], label='Upper Band', linestyle='--', color='red')
@@ -110,4 +111,10 @@ def main(logger):
         plt.xticks(rotation=45)
         plt.tight_layout()
         plt.show()
-        '''
+
+logger = logger.ImmediateDiskLogger(
+    name = time.strftime('%Y_%m_%d_%H_%M_%S', time.localtime(time.time())) + ".log",
+    std_redirect=False,
+)
+main(logger)
+#'''

@@ -1,89 +1,92 @@
-from okx.app.utils import eprint
-import pandas as pd
-import logger
+import logging
+import os
+import sys
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
-def is_time_to_buy(logger, bollinger_band, kdj_15m, kdj_1m):
-    match_15m = False
-    logger.info(f" lb[-2] {float(bollinger_band['lower_band'].iat[-2])} lb[-1] {float(bollinger_band['lower_band'].iat[-1])} 15m lp[-2].low {kdj_15m['low'].iat[-2]} lp[-2].high {float(kdj_15m['high'].iat[-2])} lp[-1].low {float(kdj_15m['low'].iat[-1])}")
-
-    if( float(bollinger_band['lower_band'].iat[-2]) > float(kdj_15m['low'].iat[-2])
-    and float(bollinger_band['lower_band'].iat[-2]) <= float(kdj_15m['high'].iat[-2])
-    and float(bollinger_band['lower_band'].iat[-1]) < float(kdj_15m['low'].iat[-1])
-    and float(kdj_15m['J'].iat[-1] < 25.0)
-    and float(kdj_15m['J'].iat[-2] < float(kdj_15m['J'].iat[-1]))       #J值转向
-    and float(kdj_15m['low'].iat[-2]) < float(kdj_15m['low'].iat[-1])): #低点抬高
-        match_15m = True
-
-    if match_15m: #满足 15min 要求
-        if( float(kdj_1m['J'].iat[-1]) < 10.0 ): #当前简单以 J<10 要求
-            logger.critical(f"{kdj_1m['ts'].iat[-1]}: 买入价格: {float(kdj_1m['close'].iat[-1])}")
-            return True
-
-    return False
-
-def is_time_to_sell(logger, bollinger_band, kdj_15m, kdj_1m):
-    match_15m = False
-    if( float(bollinger_band['upper_band'].iat[-2]) < float(kdj_15m['high'].iat[-2])
-    and float(bollinger_band['upper_band'].iat[-2]) >= float(kdj_15m['low'].iat[-2])
-    and float(bollinger_band['upper_band'].iat[-1]) > float(kdj_15m['high'].iat[-1])
-    and float(kdj_15m['J'].iat[-1] > 85.0) # J 超买
-    and float(kdj_15m['J'].iat[-2]) > float(kdj_15m['J'].iat[-1]) #J值转向
-    and float(kdj_15m['high'].iat[-2]) > float(kdj_15m['high'].iat[-1])): #高点下跌
-        match_15m = True
+class ImmediateDiskLogger:
+    """
+    支持多级日志记录并确保实时落盘的日志模块
+    """
     
-    if match_15m: #满足 15min 要求
-        if( float(kdj_1m['J'].iat[-1]) > 90.0 ): #当前简单以 J>90 要求
-            logger.critical(f"{kdj_1m['ts'].iat[-1]}: 卖出价格: {float(kdj_1m['close'].iat[-1])}")
-            return True
-
-    return False
-
-def history_bolling_find_buy(bollinger_band, kdj_15m, kdj_1m):
-    # 查找历史数据的买点
-    print("history_bolling_find_buy begin")
-    time = []
-    price = []
-    for index in kdj_15m.index:
-        if index < 20:
-            continue
-        # 15min K 上穿 布林带下轨
-        if( float(bollinger_band['lower_band'][index-1]) > float(kdj_15m['low'][index-1])
-        and float(bollinger_band['lower_band'][index-1]) <= float(kdj_15m['high'][index-1])
-        and float(bollinger_band['lower_band'][index]) < float(kdj_15m['low'][index])
-        and float(kdj_15m['J'][index] < 25.0)
-        and float(kdj_15m['J'][index-1] < float(kdj_15m['J'][index]))       #J值转向
-        and float(kdj_15m['low'][index-1]) < float(kdj_15m['low'][index])): #低点抬高
-            time.append(kdj_15m['ts'][index])
-            price.append(float(kdj_15m['close'][index]))
-            print(f"{kdj_15m['ts'][index]}: 买入价格: {float(kdj_15m['close'][index])}")
-
-    print("history_bolling_find_buy end")
-    return pd.DataFrame({
-        'time': time,
-        'price': price
-    })
-
-def history_bolling_find_sell(bollinger_band, kdj_15m, kdj_1m):
-    # 查找历史数据的卖点
-    print("history_bolling_find_sell begin")
-    time = []
-    price = []
-    for index in kdj_15m.index:
-        if index < 20:
-            continue
-        # 15min K 下穿 布林带上轨
-        if( float(bollinger_band['upper_band'][index-1]) < float(kdj_15m['high'][index-1])
-        and float(bollinger_band['upper_band'][index-1]) >= float(kdj_15m['low'][index-1])
-        and float(bollinger_band['upper_band'][index]) > float(kdj_15m['high'][index])
-        and float(kdj_15m['J'][index] > 85.0) # J 超买
-        and float(kdj_15m['J'][index-1]) > float(kdj_15m['J'][index]) #J值转向
-        and float(kdj_15m['high'][index-1]) > float(kdj_15m['high'][index])): #高点下跌
-            time.append(kdj_15m['ts'][index])
-            price.append(float(kdj_15m['close'][index]))
-            print(f"{kdj_15m['ts'][index]}: 卖出价格: {float(kdj_15m['close'][index])}")
-
-    print("history_bolling_find_sell end")
-    return pd.DataFrame({
-        'time': time,
-        'price': price
-    })
+    def __init__(self, 
+                 name: str = "app", 
+                 log_dir: str = "logs",
+                 log_level: int = logging.DEBUG,
+                 max_bytes: int = 10 * 1024 * 1024,  # 10MB
+                 backup_count: int = 5,
+                 std_redirect: bool = True):
+        """
+        初始化日志记录器
+        
+        :param name: 日志记录器名称
+        :param log_dir: 日志目录路径
+        :param log_level: 日志级别
+        :param max_bytes: 单个日志文件最大字节数
+        :param backup_count: 保留的日志备份数量
+        """
+        # 创建日志目录
+        self.log_dir = Path(log_dir)
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 创建日志记录器
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(log_level)
+        
+        # 设置日志格式
+        formatter = logging.Formatter(
+            '%(asctime)s %(levelname)-8s %(filename)s:%(lineno)d  %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        
+        # 创建文件处理器（确保立即落盘）
+        log_file = self.log_dir / f"{name}"
+        file_handler = RotatingFileHandler(
+            log_file,
+            mode='a',
+            maxBytes=max_bytes,
+            backupCount=backup_count,
+            encoding='utf-8'
+        )
+        file_handler.setFormatter(formatter)
+        file_handler.setLevel(log_level)
+        
+        # 强制立即刷新缓冲区
+        file_handler.stream.flush = lambda: os.fsync(file_handler.stream.fileno())
+        
+        # 添加处理器
+        self.logger.addHandler(file_handler)
+        
+        # 添加控制台处理器（可选）
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        console_handler.setLevel(log_level)
+        self.logger.addHandler(console_handler)
+        if (std_redirect):
+            sys.stdout = self.logger.handlers[0].stream
+            sys.stderr = self.logger.handlers[0].stream
+        self.logger.info(f"日志文件 {name} 初始化完成")
+    
+    def debug(self, message: str):
+        """记录调试信息"""
+        self.logger.debug(message)
+    
+    def info(self, message: str):
+        """记录常规信息"""
+        self.logger.info(message)
+    
+    def warning(self, message: str):
+        """记录警告信息"""
+        self.logger.warning(message)
+    
+    def error(self, message: str, exc_info: bool = False):
+        """记录错误信息"""
+        self.logger.error(message, exc_info=exc_info)
+    
+    def critical(self, message: str, exc_info: bool = False):
+        """记录严重错误信息"""
+        self.logger.critical(message, exc_info=exc_info)
+    
+    def exception(self, message: str):
+        """记录异常信息（自动包含堆栈跟踪）"""
+        self.logger.exception(message)
