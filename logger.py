@@ -14,7 +14,7 @@ class ImmediateDiskLogger:
                  log_dir: str = "logs",
                  log_level: int = logging.DEBUG,
                  max_bytes: int = 10 * 1024 * 1024,  # 10MB
-                 backup_count: int = 5
+                 backup_count: int = 5,
                  std_redirect: bool = True):
         """
         初始化日志记录器
