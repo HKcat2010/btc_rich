@@ -14,7 +14,8 @@ class ImmediateDiskLogger:
                  log_dir: str = "logs",
                  log_level: int = logging.DEBUG,
                  max_bytes: int = 10 * 1024 * 1024,  # 10MB
-                 backup_count: int = 5):
+                 backup_count: int = 5
+                 std_redirect: bool = True):
         """
         初始化日志记录器
         
@@ -61,8 +62,9 @@ class ImmediateDiskLogger:
         console_handler.setFormatter(formatter)
         console_handler.setLevel(log_level)
         self.logger.addHandler(console_handler)
-        sys.stdout = self.logger.handlers[0].stream
-        sys.stderr = self.logger.handlers[0].stream
+        if (std_redirect):
+            sys.stdout = self.logger.handlers[0].stream
+            sys.stderr = self.logger.handlers[0].stream
         self.logger.info(f"日志文件 {name} 初始化完成")
     
     def debug(self, message: str):
