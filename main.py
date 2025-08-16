@@ -30,7 +30,7 @@ def main(logger):
         local_time = time.localtime(timestamp)
         local_time_str = time.strftime('%Y-%m-%d %H:%M:%S', local_time)
         
-        logger.info(f"本地时间: {local_time_str} \n")
+        #logger.info(f"本地时间: {local_time_str} \n")
 
         if(timestamp <= last_time + sampling_interval ):
             time.sleep(1)
@@ -40,9 +40,9 @@ def main(logger):
 
         try:
             # 获取1分钟KDJ
-            kdj_1m = get_kdj.get_1m_kdj(account, 'BTC-USDT', sampling_count, n=9, m1=3, m2=3)
+            kdj_1m = get_kdj.get_1m_kdj(account, sampling_count, n=9, m1=3, m2=3)
             # 获取15分钟KDJ
-            kdj_15m = get_kdj.get_15m_kdj(account, 'BTC-USDT', sampling_count, n=9, m1=3, m2=3)
+            kdj_15m = get_kdj.get_15m_kdj(account, sampling_count, n=9, m1=3, m2=3)
             logger.info(f"本地时间: {local_time_str} get kdj \n")
 
             # 计算布林带（默认Pandas方式）
@@ -114,7 +114,7 @@ def main(logger):
 
 logger = logger.ImmediateDiskLogger(
     name = time.strftime('%Y_%m_%d_%H_%M_%S', time.localtime(time.time())) + ".log",
-    std_redirect=False,
+    std_redirect=False
 )
 main(logger)
 #'''
