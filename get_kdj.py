@@ -21,7 +21,7 @@ def get_kdj_data(logger, account, len=50, n=9, m1=3, m2=3, bar="1m", instId='BTC
     candle = market.update_history_candle(
         instId=instId,
         length=len,  # 保留数量
-        end=local_time_str,  # end默认为本地计算机时间戳
+        end=local_time_str,  # end 默认为本地计算机时间戳
         bar=bar
     )
     if (candle['code'] != '0' and candle['code'] != 'CANDLE_END_ERROR'):
@@ -29,13 +29,17 @@ def get_kdj_data(logger, account, len=50, n=9, m1=3, m2=3, bar="1m", instId='BTC
         raise ValueError("update_history_candle err")
     df = market.candle_to_df(candle['data'])
     candle_arr = df.to_dict()
+    candle_arr['ts_ms'] = candle_arr['ts'].copy()
+    for index in candle_arr['ts_ms']:
+        candle_arr['ts_ms'][index] = float(candle['data'][index,0])  # 转换 UNIX 时间戳
     kdj_data = pd.DataFrame({
         'ts': candle_arr['ts'],
+        'ts_ms': candle_arr['ts_ms'],
         'high': candle_arr['h'],
         'low': candle_arr['l'],
         'close': candle_arr['c']
     })
     #pd.set_option('display.max_rows', None)  # 显示所有行
-    #eprint(kdj_data)
+    #print(kdj_data)
     kdj_result = kdj.calculate_kdj(kdj_data, n, m1, m2)
     return kdj_result

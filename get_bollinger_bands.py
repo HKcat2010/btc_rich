@@ -18,9 +18,6 @@ def calculate_bollinger_bands(data, window=20, num_std=2):
 
     # 2. 确保时间戳为索引（便于绘图）
     df = data.copy()
-    if df.index.name != 'ts':
-        df = df.set_index('ts')
-
     # 3. 计算布林带
     df['middle_band'] = df['close'].rolling(window=window).mean()
     rolling_std = df['close'].rolling(window=window).std(ddof=0)  # 对齐TA-Lib用总体标准差
