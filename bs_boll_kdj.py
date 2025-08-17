@@ -3,38 +3,50 @@ import pandas as pd
 import logger
 
 def is_time_to_buy(logger, bollinger_band, kdj_15m, kdj_1m):
-    match_15m = False
-    logger.info(f" lb[-2] {float(bollinger_band['lower_band'].iat[-2])} lb[-1] {float(bollinger_band['lower_band'].iat[-1])} 15m lp[-2].low {kdj_15m['low'].iat[-2]} lp[-2].high {float(kdj_15m['high'].iat[-2])} lp[-1].low {float(kdj_15m['low'].iat[-1])}")
-
-    #[index-1] = .iat[-2] [index] = .iat[-1]
+    #检查15m kdj 是否满足卖点
     if( float(bollinger_band['lower_band'].iat[-2]) > float(kdj_15m['low'].iat[-2])
         and float(bollinger_band['lower_band'].iat[-1]) < float(kdj_15m['high'].iat[-1])
         and float(kdj_15m['J'].iat[-2]) < 10.0
-        and float(kdj_15m['J'].iat[-2]) < float(kdj_15m['J'].iat[-1])       # J值 抬高
-        and float(kdj_15m['high'].iat[-2]) < float(kdj_15m['high'].iat[-1])):# 高点 抬高
-            match_15m = True
+        and float(kdj_15m['J'].iat[-2]) < float(kdj_15m['J'].iat[-1])           # J值 抬高
+        and float(kdj_15m['high'].iat[-2]) < float(kdj_15m['high'].iat[-1]) ):   # 高点 抬高
+            logger.info(f"""{kdj_15m['ts'].iat[-1]}:
+                lower_band[-2]:{float(bollinger_band['lower_band'].iat[-2])}  low[-2]:{float(kdj_15m['low'].iat[-2])} 
+                lower_band[-1]:{float(bollinger_band['lower_band'].iat[-1])} high[-1]:{float(kdj_15m['high'].iat[-1])} 
+                kdj_15m['J'][-2]:{float(kdj_15m['J'].iat[-2])} kdj_15m['J'][-1]:{float(kdj_15m['J'].iat[-1])} 
+                high[-2]: {float(kdj_15m['high'].iat[-2])}
+                """)
+    else:
+        return False
 
-    if match_15m: #满足 15min 要求
-        if( float(kdj_1m['J'].iat[-1]) < 10.0 ): #当前简单以 J<10 要求
-            logger.critical(f"{kdj_1m['ts'].iat[-1]}: 买入价格: {float(kdj_1m['close'].iat[-1])}")
-            return True
+    #检查1m kdj 是否满足买点
+    if( float(kdj_1m['J'].iat[-1]) < 10.0 ):
+        logger.critical(f"{kdj_1m['ts'].iat[-1]}: 买入价格: {float(kdj_1m['close'].iat[-1])}")
+        return True
 
     return False
 
 def is_time_to_sell(logger, bollinger_band, kdj_15m, kdj_1m):
-    match_15m = False
+    #检查15m kdj 是否满足卖点
     if( float(bollinger_band['upper_band'].iat[-2]) < float(kdj_15m['high'].iat[-2])
     and float(bollinger_band['upper_band'].iat[-2]) >= float(kdj_15m['low'].iat[-2])
     and float(bollinger_band['upper_band'].iat[-1]) > float(kdj_15m['high'].iat[-1])
     and float(kdj_15m['J'].iat[-1] > 85.0) # J 超买
     and float(kdj_15m['J'].iat[-2]) > float(kdj_15m['J'].iat[-1]) #J值转向
-    and float(kdj_15m['high'].iat[-2]) > float(kdj_15m['high'].iat[-1])): #高点下跌
-        match_15m = True
+    and float(kdj_15m['low'].iat[-2]) > float(kdj_15m['low'].iat[-1])): #低点下跌
+        #满足 15min 要求
+        logger.info(f"""{kdj_15m['ts'].iat[-1]}:
+                upper_band[-2]:{float(bollinger_band['upper_band'].iat[-2])}  high[-2]:{float(kdj_15m['high'].iat[-2])} 
+                upper_band[-1]:{float(bollinger_band['upper_band'].iat[-1])} high[-1]:{float(kdj_15m['high'].iat[-1])} 
+                kdj_15m['J'][-2]:{float(kdj_15m['J'].iat[-2])} kdj_15m['J'][-1]:{float(kdj_15m['J'].iat[-1])} 
+                low[-2]: {float(kdj_15m['low'].iat[-2])}
+                """)
+    else:
+        return False
     
-    if match_15m: #满足 15min 要求
-        if( float(kdj_1m['J'].iat[-1]) > 90.0 ): #当前简单以 J>90 要求
-            logger.critical(f"{kdj_1m['ts'].iat[-1]}: 卖出价格: {float(kdj_1m['close'].iat[-1])}")
-            return True
+    #检查1m kdj 是否满足卖点
+    if( float(kdj_1m['J'].iat[-1]) > 90.0 ): #当前简单以 J>90 要求
+        logger.critical(f"{kdj_1m['ts'].iat[-1]}: 卖出价格: {float(kdj_1m['close'].iat[-1])}")
+        return True
 
     return False
 

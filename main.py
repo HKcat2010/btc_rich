@@ -1,6 +1,4 @@
 import time
-import numpy as np
-import pandas as pd
 import get_kdj
 import sys
 import bs_boll_kdj
@@ -20,7 +18,7 @@ def main(logger):
         proxy_host = None
     )
 
-    sampling_count = 200 #采样数量
+    sampling_count = 150 #采样数量
     sampling_interval = 10 #秒
     last_time = time.time()
 
@@ -40,9 +38,11 @@ def main(logger):
 
         try:
             # 获取1分钟KDJ
-            kdj_1m = get_kdj.get_1m_kdj(account, sampling_count, n=9, m1=3, m2=3)
+            kdj_1m = get_kdj.get_kdj_data(logger, account, sampling_count, n=9, m1=3, m2=3, bar="1m")
             # 获取15分钟KDJ
-            kdj_15m = get_kdj.get_15m_kdj(account, sampling_count, n=9, m1=3, m2=3)
+            kdj_15m = get_kdj.get_kdj_data(logger, account, sampling_count, n=9, m1=3, m2=3, bar="15m")
+            # 获取4小时KDJ 判断方向50根K 理论上足以
+            kdj_4h = get_kdj.get_kdj_data(logger, account, sampling_count, n=9, m1=3, m2=3, bar="4H")
             logger.info(f"本地时间: {local_time_str} get kdj \n")
 
             # 计算布林带（默认Pandas方式）
@@ -58,9 +58,10 @@ def main(logger):
             logger.error(f"time: {local_time_str} err exit : {str(e)} \n")
             time.sleep(5) #5秒 后循环重试，必要时清仓
             sys.exit(e) #退出进程 由守护进程重新拉起
-
-        # 没有持仓 判断买点
+        
+        # 没有持仓 判断买点 
         if(positions_result['code'] == '0' or len(positions_result['data']) == 0):
+            #bs_range = bs_boll_kdj.check_bs_range(logger, kdj_4h)
             if(bs_boll_kdj.is_time_to_buy(logger, bollinger_band_15m, kdj_15m, kdj_1m)):
                 #print(f"time: {local_time_str} buy price: {kdj_1m['close'][-1]} ")
                 logger.info(f"buy time: {local_time_str} price: {kdj_1m['close'][-1]} \n")
